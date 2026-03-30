@@ -1,23 +1,27 @@
+import React from 'react';
+import { Phone, Mail, MapPin } from 'lucide-react';
+
 const Contact = () => (
-  <div className="max-w-2xl mx-auto py-24 px-6">
-    <h1 className="text-4xl font-serif mb-10 text-center">Inquiries</h1>
-    <div className="bg-white p-10 rounded-3xl shadow-xl border border-gray-50">
-      <form className="space-y-6">
-        <div>
-          <label className="text-xs font-bold text-gray-400 uppercase">Full Name</label>
-          <input type="text" className="w-full border-b border-gray-200 py-2 outline-none focus:border-blue-500" />
-        </div>
-        <div>
-          <label className="text-xs font-bold text-gray-400 uppercase">Email</label>
-          <input type="email" className="w-full border-b border-gray-200 py-2 outline-none focus:border-blue-500" />
-        </div>
-        <div>
-          <label className="text-xs font-bold text-gray-400 uppercase">Message</label>
-          <textarea rows="4" className="w-full border-b border-gray-200 py-2 outline-none focus:border-blue-500"></textarea>
-        </div>
-        <button className="w-full bg-blue-600 text-white font-bold py-4 rounded-xl shadow-lg shadow-blue-100 transition hover:bg-blue-700">Send Inquiry</button>
-      </form>
+  <div className="max-w-4xl mx-auto py-24 px-6 text-center">
+    <h1 className="text-4xl font-serif font-bold mb-16">Connect With Us</h1>
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
+      <div className="bg-white p-10 rounded-3xl shadow-sm border border-slate-100">
+        <Phone size={32} className="mx-auto text-blue-600 mb-6" />
+        <h4 className="font-bold mb-2">Phone</h4>
+        <p className="text-slate-500">+254 112 432 106</p>
+      </div>
+      <div className="bg-white p-10 rounded-3xl shadow-sm border border-slate-100">
+        <Mail size={32} className="mx-auto text-blue-600 mb-6" />
+        <h4 className="font-bold mb-2">Email</h4>
+        <p className="text-slate-500 text-sm">info@MzalendoLuxe.co.ke</p>
+      </div>
+      <div className="bg-white p-10 rounded-3xl shadow-sm border border-slate-100">
+        <MapPin size={32} className="mx-auto text-blue-600 mb-6" />
+        <h4 className="font-bold mb-2">Location</h4>
+        <p className="text-slate-900 font-bold">Nairobi, Kenya</p>
+      </div>
     </div>
   </div>
 );
+
 export default Contact;

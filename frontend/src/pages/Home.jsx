@@ -1,169 +1,160 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Star, MapPin, Calendar, Info } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Calendar, Users, Search, Star, ArrowRight } from 'lucide-react';
 
-const ROOM_DATA = [
-  { id: 1, name: "Royal Ocean Suite", price: 450, type: "Luxury", rating: 5, img: "https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?auto=format&fit=crop&q=80&w=800" },
-  { id: 2, name: "Executive Business Twin", price: 190, type: "Business", rating: 4, img: "https://images.unsplash.com/photo-1566665797739-1674de7a421a?auto=format&fit=crop&q=80&w=800" },
-  { id: 3, name: "Family Garden Villa", price: 320, type: "Family", rating: 5, img: "https://images.unsplash.com/photo-1540518614846-7eded433c457?auto=format&fit=crop&q=80&w=800" },
-  { id: 4, name: "Classic Studio", price: 120, type: "Standard", rating: 3, img: "https://images.unsplash.com/photo-1598928506311-c55ded91a20c?auto=format&fit=crop&q=80&w=800" }
+const ROOMS = [
+  { id: 1, name: "Royal Ocean Suite", price: 450, type: "Luxury", max: 4, img: "https://images.unsplash.com/photo-1582719478250-c89cae4dc85b" },
+  { id: 2, name: "Executive Business Twin", price: 190, type: "Business", max: 2, img: "https://images.unsplash.com/photo-1566665797739-1674de7a421a" },
+  { id: 3, name: "Family Garden Villa", price: 320, type: "Family", max: 10, img: "https://images.unsplash.com/photo-1540518614846-7eded433c457" },
+  { id: 4, name: "Classic Studio", price: 120, type: "Standard", max: 2, img: "https://images.unsplash.com/photo-1598928506311-c55ded91a20c" }
 ];
 
-const Home = () => {
-  const [dates, setDates] = useState({ in: '', out: '' });
-  const [search, setSearch] = useState('');
+const Home = ({ user }) => {
+  const navigate = useNavigate();
   const [slide, setSlide] = useState(0);
+  const [dates, setDates] = useState({ in: '', out: '' });
+  const [guests, setGuests] = useState(1);
+  const [searchTerm, setSearchTerm] = useState('');
 
-  const heroImages = [
-    "https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?auto=format&fit=crop&q=80&w=1200",
-    "https://images.unsplash.com/photo-1571896349842-33c89424de2d?auto=format&fit=crop&q=80&w=1200"
-  ];
-
+  // 1. Slideshow Logic: Auto-rotate every 5 seconds
   useEffect(() => {
-    const timer = setInterval(() => setSlide(s => (s + 1) % heroImages.length), 6000);
+    const timer = setInterval(() => {
+      setSlide((prev) => (prev + 1) % ROOMS.slice(0, 3).length); // Slide only top 3 rooms
+    }, 5000);
     return () => clearInterval(timer);
-  }, [heroImages.length]);
+  }, []);
 
-  // Logic: User can only book if both dates exist and check-out is after check-in
-  const isReady = dates.in && dates.out && new Date(dates.out) > new Date(dates.in);
-
-  const filteredRooms = ROOM_DATA.filter(r => 
-    r.name.toLowerCase().includes(search.toLowerCase()) || 
-    r.type.toLowerCase().includes(search.toLowerCase())
+  // 2. Filter Logic: Search by name or type
+  const filteredRooms = ROOMS.filter(room => 
+    room.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    room.type.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  const handleBook = (room) => {
+    // Check if user is logged in
+    if (!user) {
+      alert("⚠️ Authentication Required: Please 'Sign In' or 'Create Account' at the top to book your stay.");
+      return;
+    }
+
+    // Check if dates are selected
+    if (!dates.in || !dates.out) {
+      alert("⚠️ Selection Required: Please choose your Check-In and Check-Out dates in the search bar above.");
+      return;
+    }
+
+    // Check if dates are valid
+    if (new Date(dates.out) <= new Date(dates.in)) {
+      alert("⚠️ Invalid Dates: Check-Out must be after Check-In.");
+      return;
+    }
+
+    navigate('/reserve', { state: { room, dates, guests } });
+  };
 
   return (
     <div className="bg-slate-50 min-h-screen">
-      {/* --- HERO SLIDER SECTION --- */}
-      <div className="relative h-[600px] overflow-hidden">
-        {heroImages.map((img, i) => (
+      {/* Slideshow Hero Section */}
+      <div className="relative h-[550px] overflow-hidden bg-slate-900">
+        {ROOMS.slice(0, 3).map((room, i) => (
           <div 
-            key={i} 
-            className={`absolute inset-0 transition-all duration-[2000ms] ease-in-out transform ${i === slide ? 'opacity-100 scale-105' : 'opacity-0 scale-100'}`}
+            key={room.id} 
+            className={`absolute inset-0 transition-all duration-1000 ease-in-out ${i === slide ? 'opacity-100 scale-100' : 'opacity-0 scale-110'}`}
           >
-            <img src={img} className="w-full h-full object-cover" alt="Luxury Hotel" />
-            <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/30 to-transparent" />
-          </div>
-        ))}
-        
-        <div className="absolute inset-0 flex flex-col items-center justify-center text-white text-center px-4">
-          <span className="uppercase tracking-[0.3em] text-sm mb-4 animate-fadeIn">Welcome to Mzalendo Luxe</span>
-          <h1 className="text-5xl md:text-7xl font-serif font-bold mb-6 drop-shadow-lg">
-            Your Sanctuary Awaits
-          </h1>
-          <p className="text-lg md:text-xl font-light max-w-2xl opacity-90 leading-relaxed">
-            Experience world-class hospitality in the heart of the city. 
-            Book your stay today starting from 120 USD.
-          </p>
-        </div>
-      </div>
-
-      {/* --- BOOKING BAR (Floating Card) --- */}
-      <div className="max-w-6xl mx-auto -mt-20 relative z-20 px-4">
-        <div className="bg-white/95 backdrop-blur-md p-8 rounded-3xl shadow-2xl border border-white/20">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 items-end">
-            <div className="space-y-2">
-              <label className="flex items-center gap-2 text-xs font-bold text-slate-500 uppercase tracking-wider">
-                <Calendar size={14} className="text-blue-600" /> Check In
-              </label>
-              <input 
-                type="date" 
-                className="w-full border-slate-200 rounded-xl p-3 bg-slate-50 focus:ring-2 focus:ring-blue-500 transition-all outline-none" 
-                onChange={e => setDates({...dates, in: e.target.value})} 
-              />
-            </div>
-            <div className="space-y-2">
-              <label className="flex items-center gap-2 text-xs font-bold text-slate-500 uppercase tracking-wider">
-                <Calendar size={14} className="text-blue-600" /> Check Out
-              </label>
-              <input 
-                type="date" 
-                className="w-full border-slate-200 rounded-xl p-3 bg-slate-50 focus:ring-2 focus:ring-blue-500 transition-all outline-none" 
-                onChange={e => setDates({...dates, out: e.target.value})} 
-              />
-            </div>
-            <div className="space-y-2">
-              <label className="flex items-center gap-2 text-xs font-bold text-slate-500 uppercase tracking-wider">
-                <Search size={14} className="text-blue-600" /> Search Type
-              </label>
-              <div className="relative">
-                <input 
-                  type="text" 
-                  placeholder="e.g. Luxury, Suite..." 
-                  className="w-full border-slate-200 rounded-xl p-3 bg-slate-50 outline-none focus:ring-2 focus:ring-blue-500" 
-                  onChange={e => setSearch(e.target.value)} 
-                />
-              </div>
-            </div>
-            <button className="bg-blue-600 hover:bg-blue-700 text-white font-bold h-[52px] rounded-xl transition-all active:scale-95 shadow-lg shadow-blue-200">
-              Check Availability
-            </button>
-          </div>
-          
-          {/* Validation Message */}
-          {!isReady && (
-            <div className="mt-4 flex items-center gap-2 text-amber-600 bg-amber-50 p-3 rounded-lg border border-amber-100">
-              <Info size={16} />
-              <p className="text-xs font-medium">
-                {(!dates.in || !dates.out) 
-                  ? "Please select both check-in and check-out dates to book." 
-                  : "Check-out date must be after the check-in date."}
+            <img src={room.img} className="w-full h-full object-cover opacity-60" alt={room.name} />
+            <div className="absolute inset-0 flex flex-col items-center justify-center text-center text-white px-4">
+              <span className="bg-blue-600 px-4 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-widest mb-4">
+                {room.type} Collection
+              </span>
+              <h1 className="text-5xl md:text-7xl font-serif font-bold mb-4 drop-shadow-2xl">
+                {room.name}
+              </h1>
+              <p className="text-lg md:text-xl font-light text-slate-200 max-w-2xl">
+                Experience the pinnacle of Kenyan luxury. Book your exclusive escape today.
               </p>
             </div>
-          )}
+          </div>
+        ))}
+        {/* Slide Indicators */}
+        <div className="absolute bottom-20 left-1/2 -translate-x-1/2 flex gap-2">
+          {[0, 1, 2].map(i => (
+            <div key={i} className={`h-1.5 w-8 rounded-full transition-all ${i === slide ? 'bg-blue-600 w-12' : 'bg-white/30'}`} />
+          ))}
         </div>
       </div>
 
-      {/* --- ROOM GRID SECTION --- */}
-      <section className="max-w-7xl mx-auto py-24 px-6">
-        <div className="flex flex-col md:flex-row justify-between items-end mb-12 gap-4">
-          <div>
-            <h2 className="text-4xl font-serif font-bold text-slate-900 mb-2">Our Accommodations</h2>
-            <p className="text-slate-500">Hand-picked rooms designed for ultimate comfort.</p>
+      {/* Modern Search/Filter Bar */}
+      <div className="max-w-6xl mx-auto -mt-16 px-4 relative z-30">
+        <div className="bg-white p-8 rounded-3xl shadow-2xl grid grid-cols-1 md:grid-cols-4 gap-6 items-end border border-slate-100">
+          <div className="space-y-2">
+            <label className="text-[10px] font-bold text-slate-400 uppercase flex items-center gap-2"><Calendar size={14}/> Check In</label>
+            <input 
+              type="date" 
+              className="w-full bg-slate-50 border border-slate-100 p-3 rounded-xl outline-none focus:ring-2 focus:ring-blue-600 transition-all text-sm" 
+              onChange={e => setDates({...dates, in: e.target.value})} 
+            />
           </div>
-          <div className="text-right">
-            <span className="text-sm font-bold text-blue-600 bg-blue-50 px-4 py-2 rounded-full">
-              {filteredRooms.length} Rooms Found
-            </span>
+          <div className="space-y-2">
+            <label className="text-[10px] font-bold text-slate-400 uppercase flex items-center gap-2"><Calendar size={14}/> Check Out</label>
+            <input 
+              type="date" 
+              className="w-full bg-slate-50 border border-slate-100 p-3 rounded-xl outline-none focus:ring-2 focus:ring-blue-600 transition-all text-sm" 
+              onChange={e => setDates({...dates, out: e.target.value})} 
+            />
+          </div>
+          <div className="space-y-2">
+            <label className="text-[10px] font-bold text-slate-400 uppercase flex items-center gap-2"><Users size={14}/> Guests</label>
+            <select 
+              className="w-full bg-slate-50 border border-slate-100 p-3 rounded-xl outline-none focus:ring-2 focus:ring-blue-600 transition-all text-sm appearance-none" 
+              onChange={e => setGuests(parseInt(e.target.value))}
+            >
+              {[...Array(10)].map((_, i) => <option key={i+1} value={i+1}>{i+1} Guest{i > 0 ? 's' : ''}</option>)}
+            </select>
+          </div>
+          <div className="space-y-2">
+            <label className="text-[10px] font-bold text-slate-400 uppercase flex items-center gap-2"><Search size={14}/> Room Search</label>
+            <input 
+              type="text" 
+              placeholder="Search Luxury, Family..." 
+              className="w-full bg-slate-50 border border-slate-100 p-3 rounded-xl outline-none focus:ring-2 focus:ring-blue-600 transition-all text-sm"
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
           </div>
         </div>
+      </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10">
+      {/* Dynamic Room Listing */}
+      <div className="max-w-7xl mx-auto py-24 px-6">
+        <div className="mb-12">
+          <h2 className="text-3xl font-serif font-bold text-slate-900">Available Accommodations</h2>
+          <div className="h-1 w-20 bg-blue-600 mt-3 rounded-full"></div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
           {filteredRooms.map(room => (
-            <div key={room.id} className="group bg-white rounded-[2rem] overflow-hidden shadow-sm hover:shadow-2xl transition-all duration-500 border border-slate-100">
+            <div key={room.id} className="bg-white rounded-[2.5rem] overflow-hidden border border-slate-100 shadow-sm hover:shadow-2xl transition-all duration-500 group flex flex-col">
               <div className="relative h-64 overflow-hidden">
-                <img 
-                  src={room.img} 
-                  className="h-full w-full object-cover transform group-hover:scale-110 transition-transform duration-700" 
-                  alt={room.name} 
-                />
-                <div className="absolute top-4 left-4">
-                  <span className="bg-white/90 backdrop-blur px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest text-blue-600 shadow-sm">
-                    {room.type}
-                  </span>
+                <img src={room.img} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" alt={room.name} />
+                <div className="absolute top-4 left-4 bg-white/90 backdrop-blur px-4 py-1.5 rounded-full text-[10px] font-bold text-blue-600 uppercase tracking-tighter shadow-sm">
+                  {room.type}
                 </div>
               </div>
-
-              <div className="p-8">
-                <div className="flex text-amber-400 mb-3">
-                  {[...Array(room.rating)].map((_, i) => <Star key={i} size={14} fill="currentColor" />)}
+              <div className="p-8 flex flex-col flex-grow">
+                <div className="flex gap-1 text-amber-400 mb-3">
+                  {[...Array(5)].map((_, i) => <Star key={i} size={14} fill="currentColor" />)}
                 </div>
                 <h3 className="text-xl font-bold text-slate-900 mb-4 group-hover:text-blue-600 transition-colors">
                   {room.name}
                 </h3>
+                <p className="text-3xl font-black text-slate-800 mt-auto mb-8">
+                  ${room.price} <span className="text-xs font-normal text-slate-400">USD/Night</span>
+                </p>
                 
-                <div className="flex items-baseline gap-1 mb-8">
-                  <span className="text-3xl font-black text-slate-900">${room.price}</span>
-                  <span className="text-sm font-medium text-slate-400">USD/Night</span>
-                </div>
-
                 <button 
-                  disabled={!isReady}
-                  className={`w-full py-4 rounded-2xl font-bold text-sm tracking-wide transition-all duration-300 
-                    ${isReady 
-                      ? 'bg-slate-900 text-white hover:bg-blue-600 hover:-translate-y-1 shadow-lg' 
-                      : 'bg-slate-100 text-slate-300 cursor-not-allowed'}`}
+                  onClick={() => handleBook(room)}
+                  className="w-full py-4 bg-slate-900 text-white rounded-2xl font-bold hover:bg-blue-600 transition-all flex items-center justify-center gap-2 shadow-xl shadow-slate-200"
                 >
-                  {isReady ? 'Reserve Now' : 'Select Dates'}
+                  Reserve Now <ArrowRight size={18}/>
                 </button>
               </div>
             </div>
@@ -172,10 +163,10 @@ const Home = () => {
 
         {filteredRooms.length === 0 && (
           <div className="text-center py-20">
-            <p className="text-slate-400 text-lg italic">No rooms match your search criteria...</p>
+            <p className="text-slate-400 italic">No rooms found matching "{searchTerm}"</p>
           </div>
         )}
-      </section>
+      </div>
     </div>
   );
 };
